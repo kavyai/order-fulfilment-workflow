@@ -1,0 +1,29 @@
+plugins {
+    id 'boot-application'
+}
+
+dependencies {
+    implementation project(':api')
+    implementation project(':service')
+
+    implementation libs.spring.boot.web
+    implementation libs.spring.boot.data.jpa
+    implementation libs.spring.boot.validation
+    implementation libs.springdoc.openapi
+
+    runtimeOnly 'com.h2database:h2'
+
+    testImplementation libs.spring.boot.test
+}
+
+springBoot {
+    mainClass = 'com.example.orderfulfilment.OrderFulfilmentApplication'
+}
+
+tasks.named('bootJar') {
+    enabled = true
+}
+
+tasks.named('jar') {
+    enabled = false
+}

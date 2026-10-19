@@ -1,0 +1,15 @@
+
+plugins {
+    id 'library'
+}
+
+dependencies {
+    api project(':service')
+
+    implementation libs.spring.boot.web
+    implementation libs.spring.boot.validation
+    implementation libs.springdoc.openapi
+
+    testImplementation libs.spring.boot.test
+    testRuntimeOnly libs.junit.platform.launcher
+}

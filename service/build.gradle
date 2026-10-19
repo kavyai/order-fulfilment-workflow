@@ -1,0 +1,12 @@
+plugins {
+    id 'library'
+}
+
+dependencies {
+    api libs.spring.boot.data.jpa
+
+    implementation libs.camunda.external.task.client
+
+    testImplementation libs.spring.boot.test
+    testRuntimeOnly libs.junit.platform.launcher
+}

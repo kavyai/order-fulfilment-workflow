@@ -1,0 +1,371 @@
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #f3f6fb;
+  color: #243449;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.container {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 32px clamp(16px, 4vw, 48px);
+}
+
+/* Professional navy and blue dashboard header */
+header {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 28px;
+  padding: 32px;
+  border-radius: 18px;
+  color: #fff;
+  background: linear-gradient(120deg, #142b4a, #205c91 72%, #167f91);
+  box-shadow: 0 12px 28px rgba(20, 43, 74, 0.15);
+}
+
+header::after {
+  content: "";
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  right: -45px;
+  top: -95px;
+  border: 28px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+header h1 {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 8px;
+  font-size: clamp(25px, 3vw, 34px);
+  line-height: 1.25;
+  letter-spacing: -0.7px;
+  font-weight: 700;
+}
+
+header p {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: #dceafa;
+  font-size: 15px;
+}
+
+/* White content cards */
+.card {
+  min-width: 0;
+  margin-bottom: 24px;
+  padding: clamp(18px, 3vw, 28px);
+  background: #fff;
+  border: 1px solid #e5ebf3;
+  border-radius: 16px;
+  box-shadow: 0 5px 20px rgba(24, 48, 78, 0.045);
+}
+
+h2 {
+  margin: 0 0 22px;
+  color: #193653;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+/* Order form */
+form {
+  display: grid;
+  grid-template-columns: 175px minmax(0, 1fr);
+  align-items: center;
+  gap: 15px 20px;
+  max-width: 800px;
+}
+
+form label {
+  color: #354a62;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+input,
+select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 13px;
+  color: #243449;
+  background: #fff;
+  border: 1px solid #d5deea;
+  border-radius: 8px;
+  font: inherit;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+input::placeholder {
+  color: #98a6b8;
+}
+
+input:focus,
+select:focus {
+  border-color: #2876bd;
+  box-shadow: 0 0 0 3px rgba(40, 118, 189, 0.12);
+}
+
+form button {
+  grid-column: 2;
+  justify-self: start;
+  margin-top: 4px;
+}
+
+/* Modern interactive buttons */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 10px 17px;
+  color: #fff;
+  background: #205c91;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(20, 43, 74, 0.08);
+  transition: background 0.18s ease, transform 0.18s ease,
+  box-shadow 0.18s ease;
+}
+
+button:hover:not(:disabled) {
+  background: #164675;
+  box-shadow: 0 5px 12px rgba(32, 92, 145, 0.2);
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+button:focus-visible {
+  outline: 3px solid rgba(15, 157, 145, 0.4);
+  outline-offset: 3px;
+}
+
+button:disabled {
+  color: #8b98a8;
+  background: #edf1f6;
+  border-color: #e1e7ef;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+button.secondary {
+  color: #205c91;
+  background: #edf5fc;
+  border-color: #d5e6f5;
+  box-shadow: none;
+}
+
+button.secondary:hover:not(:disabled) {
+  color: #164675;
+  background: #dcecf9;
+}
+
+button.danger {
+  color: #fff;
+  background: #c74751;
+}
+
+button.danger:hover:not(:disabled) {
+  background: #a9323d;
+}
+
+/* Section headings and refresh buttons */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.section-header h2 {
+  margin: 0;
+}
+
+/* Horizontally scrollable orders table */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e4eaf2;
+  border-radius: 10px;
+}
+
+table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+thead th {
+  padding: 14px 16px;
+  color: #425b75;
+  background: #f3f7fb;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+  border-bottom: 1px solid #e1e8f0;
+}
+
+tbody td {
+  padding: 14px 16px;
+  color: #354a62;
+  vertical-align: middle;
+  border-bottom: 1px solid #edf1f6;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background: #f8fbfe;
+}
+
+/* Order status badges */
+.status {
+  display: inline-block;
+  padding: 5px 9px;
+  color: #205c91;
+  background: #edf5fc;
+  border: 1px solid #dceaf7;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+/* Credit review panels */
+.review {
+  margin-top: 14px;
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid #e4eaf2;
+  border-left: 4px solid #0f9d91;
+  border-radius: 10px;
+}
+
+.review p {
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+}
+
+.review input {
+  margin-bottom: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actions button:first-child {
+  background: #0b887d;
+}
+
+.actions button:first-child:hover:not(:disabled) {
+  background: #086c64;
+}
+
+/* Success and error feedback */
+.message,
+.error {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+
+.message {
+  color: #126b50;
+  background: #eaf7f0;
+  border: 1px solid #cbe9d9;
+}
+
+.error {
+  color: #a12d39;
+  background: #fff0f0;
+  border: 1px solid #f4d1d4;
+}
+
+/* Responsive layout */
+@media (max-width: 700px) {
+  .container {
+    padding: 18px 12px;
+  }
+
+  header {
+    padding: 25px 20px;
+    border-radius: 13px;
+  }
+
+  .card {
+    padding: 18px 14px;
+    border-radius: 12px;
+  }
+
+  form {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  form label {
+    margin-top: 8px;
+  }
+
+  form button {
+    grid-column: 1;
+    justify-self: stretch;
+    margin-top: 10px;
+  }
+
+  .section-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .actions button {
+    flex: 1;
+  }
+
+  table {
+    min-width: 760px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

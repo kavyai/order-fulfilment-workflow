@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+    xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    id="Definitions_OrderFulfilment"
+    targetNamespace="http://example.com/order-fulfilment">
+
+  <bpmn:message id="Message_CustomerUpdatedPriority"
+                name="CustomerUpdatedPriority" />
+
+  <bpmn:process
+      id="orderFulfilmentProcess"
+      name="Order Fulfilment"
+      isExecutable="true"
+      camunda:historyTimeToLive="180">
+
+    <bpmn:startEvent id="StartEvent_OrderReceived"
+                     name="Order Received">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:serviceTask id="Task_ValidateOrder"
+                      name="Validate Order"
+                      camunda:type="external"
+                      camunda:topic="validate-order">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_ValidOrder"
+                           name="Order valid?">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_Valid</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Invalid</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Task_OrderRejected"
+                      name="Order Rejected"
+                      camunda:type="external"
+                      camunda:topic="order-rejected">
+      <bpmn:incoming>Flow_Invalid</bpmn:incoming>
+      <bpmn:incoming>Flow_CreditRejected</bpmn:incoming>
+      <bpmn:outgoing>Flow_RejectedEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_OrderRejected"
+                   name="Order Rejected">
+      <bpmn:incoming>Flow_RejectedEnd</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:exclusiveGateway id="Gateway_CreditThreshold"
+                           name="Amount at most EUR 1000?">
+      <bpmn:incoming>Flow_Valid</bpmn:incoming>
+      <bpmn:outgoing>Flow_AutoApprove</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ManualReview</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:userTask id="Task_CreditReview"
+                   name="Credit Officer Review"
+                   camunda:candidateGroups="credit-officers">
+      <bpmn:incoming>Flow_ManualReview</bpmn:incoming>
+      <bpmn:outgoing>Flow_ReviewComplete</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:boundaryEvent id="Boundary_CreditTimeout"
+                        name="10-minute credit timeout"
+                        attachedToRef="Task_CreditReview"
+                        cancelActivity="true">
+      <bpmn:outgoing>Flow_AutoCancel</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>PT1M</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+
+    <bpmn:boundaryEvent id="Boundary_PriorityUpdate"
+                        name="Customer Updated Priority"
+                        attachedToRef="Task_CreditReview"
+                        cancelActivity="false">
+      <bpmn:outgoing>Flow_PriorityLog</bpmn:outgoing>
+      <bpmn:messageEventDefinition
+          messageRef="Message_CustomerUpdatedPriority" />
+    </bpmn:boundaryEvent>
+
+    <bpmn:serviceTask id="Task_UpdateSlaLog"
+                      name="Update SLA Log"
+                      camunda:type="external"
+                      camunda:topic="update-sla-log">
+      <bpmn:incoming>Flow_PriorityLog</bpmn:incoming>
+      <bpmn:outgoing>Flow_SlaEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_SlaLogged"
+                   name="Priority Update Logged">
+      <bpmn:incoming>Flow_SlaEnd</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:serviceTask id="Task_AutoCancel"
+                      name="Auto-Cancel Order"
+                      camunda:type="external"
+                      camunda:topic="order-auto-cancel">
+      <bpmn:incoming>Flow_AutoCancel</bpmn:incoming>
+      <bpmn:outgoing>Flow_CancelEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_AutoCancelled"
+                   name="Order Auto-Cancelled">
+      <bpmn:incoming>Flow_CancelEnd</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:exclusiveGateway id="Gateway_CreditDecision"
+                           name="Credit approved?">
+      <bpmn:incoming>Flow_AutoApprove</bpmn:incoming>
+      <bpmn:incoming>Flow_ReviewComplete</bpmn:incoming>
+      <bpmn:outgoing>Flow_CreditApproved</bpmn:outgoing>
+      <bpmn:outgoing>Flow_CreditRejected</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:parallelGateway id="Gateway_FulfilmentSplit"
+                          name="Start fulfilment tasks">
+      <bpmn:incoming>Flow_CreditApproved</bpmn:incoming>
+      <bpmn:outgoing>Flow_ReserveInventory</bpmn:outgoing>
+      <bpmn:outgoing>Flow_GenerateInvoice</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:serviceTask id="Task_ReserveInventory"
+                      name="Reserve Inventory"
+                      camunda:type="external"
+                      camunda:topic="reserve-inventory">
+      <bpmn:incoming>Flow_ReserveInventory</bpmn:incoming>
+      <bpmn:outgoing>Flow_InventoryJoin</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_GenerateInvoice"
+                      name="Generate Invoice"
+                      camunda:type="external"
+                      camunda:topic="generate-invoice">
+      <bpmn:incoming>Flow_GenerateInvoice</bpmn:incoming>
+      <bpmn:outgoing>Flow_InvoiceJoin</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:parallelGateway id="Gateway_FulfilmentJoin"
+                          name="Fulfilment tasks complete">
+      <bpmn:incoming>Flow_InventoryJoin</bpmn:incoming>
+      <bpmn:incoming>Flow_InvoiceJoin</bpmn:incoming>
+      <bpmn:outgoing>Flow_NotificationSplit</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:inclusiveGateway id="Gateway_NotificationSplit"
+                           name="Select notification channels">
+      <bpmn:incoming>Flow_NotificationSplit</bpmn:incoming>
+      <bpmn:outgoing>Flow_Email</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Sms</bpmn:outgoing>
+      <bpmn:outgoing>Flow_NotificationJoinEmail</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+
+    <bpmn:serviceTask id="Task_SendEmail"
+                      name="Send Email"
+                      camunda:type="external"
+                      camunda:topic="send-email">
+      <bpmn:incoming>Flow_Email</bpmn:incoming>
+      <bpmn:outgoing>Flow_EmailJoin</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_SendSms"
+                      name="Send SMS"
+                      camunda:type="external"
+                      camunda:topic="send-sms">
+      <bpmn:incoming>Flow_Sms</bpmn:incoming>
+      <bpmn:outgoing>Flow_SmsJoin</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:inclusiveGateway id="Gateway_NotificationJoin"
+                           name="Notifications complete">
+      <bpmn:incoming>Flow_EmailJoin</bpmn:incoming>
+      <bpmn:incoming>Flow_SmsJoin</bpmn:incoming>
+      <bpmn:incoming>Flow_NotificationJoinEmail</bpmn:incoming>
+      <bpmn:outgoing>Flow_Fulfilled</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+
+<bpmn:serviceTask id="Task_MarkOrderFulfilled"
+                  name="Mark Order Fulfilled"
+                  camunda:type="external"
+                  camunda:topic="mark-order-fulfilled">
+  <bpmn:incoming>Flow_Fulfilled</bpmn:incoming>
+  <bpmn:outgoing>Flow_FulfilledEnd</bpmn:outgoing>
+</bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_OrderFulfilled"
+                   name="Order Fulfilled">
+      <bpmn:incoming>Flow_FulfilledEnd</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_1"
+        sourceRef="StartEvent_OrderReceived"
+        targetRef="Task_ValidateOrder" />
+
+    <bpmn:sequenceFlow id="Flow_2"
+        sourceRef="Task_ValidateOrder"
+        targetRef="Gateway_ValidOrder" />
+
+    <bpmn:sequenceFlow id="Flow_Valid"
+        sourceRef="Gateway_ValidOrder"
+        targetRef="Gateway_CreditThreshold">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${valid == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Invalid"
+        sourceRef="Gateway_ValidOrder"
+        targetRef="Task_OrderRejected">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${valid == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_RejectedEnd"
+        sourceRef="Task_OrderRejected"
+        targetRef="EndEvent_OrderRejected" />
+
+    <bpmn:sequenceFlow id="Flow_AutoApprove"
+        sourceRef="Gateway_CreditThreshold"
+        targetRef="Gateway_CreditDecision">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${amount &lt;= 1000}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_ManualReview"
+        sourceRef="Gateway_CreditThreshold"
+        targetRef="Task_CreditReview">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${amount &gt; 1000}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_ReviewComplete"
+        sourceRef="Task_CreditReview"
+        targetRef="Gateway_CreditDecision" />
+
+    <bpmn:sequenceFlow id="Flow_CreditApproved"
+        sourceRef="Gateway_CreditDecision"
+        targetRef="Gateway_FulfilmentSplit">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${amount &lt;= 1000 || creditApproved == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_CreditRejected"
+        sourceRef="Gateway_CreditDecision"
+        targetRef="Task_OrderRejected">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${creditApproved == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_AutoCancel"
+        sourceRef="Boundary_CreditTimeout"
+        targetRef="Task_AutoCancel" />
+
+    <bpmn:sequenceFlow id="Flow_CancelEnd"
+        sourceRef="Task_AutoCancel"
+        targetRef="EndEvent_AutoCancelled" />
+
+    <bpmn:sequenceFlow id="Flow_PriorityLog"
+        sourceRef="Boundary_PriorityUpdate"
+        targetRef="Task_UpdateSlaLog" />
+
+    <bpmn:sequenceFlow id="Flow_SlaEnd"
+        sourceRef="Task_UpdateSlaLog"
+        targetRef="EndEvent_SlaLogged" />
+
+    <bpmn:sequenceFlow id="Flow_ReserveInventory"
+        sourceRef="Gateway_FulfilmentSplit"
+        targetRef="Task_ReserveInventory" />
+
+    <bpmn:sequenceFlow id="Flow_GenerateInvoice"
+        sourceRef="Gateway_FulfilmentSplit"
+        targetRef="Task_GenerateInvoice" />
+
+    <bpmn:sequenceFlow id="Flow_InventoryJoin"
+        sourceRef="Task_ReserveInventory"
+        targetRef="Gateway_FulfilmentJoin" />
+
+    <bpmn:sequenceFlow id="Flow_InvoiceJoin"
+        sourceRef="Task_GenerateInvoice"
+        targetRef="Gateway_FulfilmentJoin" />
+
+    <bpmn:sequenceFlow id="Flow_NotificationSplit"
+        sourceRef="Gateway_FulfilmentJoin"
+        targetRef="Gateway_NotificationSplit" />
+
+    <bpmn:sequenceFlow id="Flow_Email"
+        sourceRef="Gateway_NotificationSplit"
+        targetRef="Task_SendEmail">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${notificationPreference == 'EMAIL' || notificationPreference == 'BOTH'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Sms"
+        sourceRef="Gateway_NotificationSplit"
+        targetRef="Task_SendSms">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${notificationPreference == 'SMS' || notificationPreference == 'BOTH'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_NotificationJoinEmail"
+        sourceRef="Gateway_NotificationSplit"
+        targetRef="Gateway_NotificationJoin">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${notificationPreference == 'NONE'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_EmailJoin"
+        sourceRef="Task_SendEmail"
+        targetRef="Gateway_NotificationJoin" />
+
+    <bpmn:sequenceFlow id="Flow_SmsJoin"
+        sourceRef="Task_SendSms"
+        targetRef="Gateway_NotificationJoin" />
+
+   <bpmn:sequenceFlow id="Flow_Fulfilled"
+                      sourceRef="Gateway_NotificationJoin"
+                      targetRef="Task_MarkOrderFulfilled" />
+
+   <bpmn:sequenceFlow id="Flow_FulfilledEnd"
+                      sourceRef="Task_MarkOrderFulfilled"
+                      targetRef="EndEvent_OrderFulfilled" />
+
+  </bpmn:process>
+</bpmn:definitions>
